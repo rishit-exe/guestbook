@@ -1,13 +1,15 @@
 FROM golang:1.20 AS builder
 WORKDIR /app
 
+ENV GOPROXY=direct
+ENV GOSUMDB=off
+
 COPY main.go .
 
 RUN go mod init guestbook
 RUN go mod tidy
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o guestbook main.go
-
 
 FROM alpine:3.18
 WORKDIR /app

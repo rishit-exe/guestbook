@@ -1,18 +1,19 @@
-FROM golang:1.15 as builder
-RUN go get github.com/codegangsta/negroni
-RUN go get github.com/gorilla/mux github.com/xyproto/simpleredis
-COPY main.go .
-RUN go build main.go
-
-FROM ubuntu:18.04
-
-COPY --from=builder /go//main /app/guestbook
-
-ADD public/index.html /app/public/index.html
-ADD public/script.js /app/public/script.js
-ADD public/style.css /app/public/style.css
-ADD public/jquery.min.js /app/public/jquery.min.js
-
+FROM golang:1.20 AS builder
 WORKDIR /app
-CMD ["./guestbook"]
+
+COPY main.go .
+
+RUN go mod init guestbook
+RUN go mod tidy
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o guestbook main.go
+
+
+FROM alpine:3.18
+WORKDIR /app
+
+COPY --from=builder /app/guestbook /app/guestbook
+COPY public/ /app/public/
+
 EXPOSE 3000
+CMD ["./guestbook"]
